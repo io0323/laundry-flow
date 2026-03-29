@@ -25,6 +25,7 @@ type
     procedure EditCustomer(AID: Integer; const AName, APhone, AAddress, AMemberType: string);
     function SearchCustomers(const AKeyword: string): TFDQuery;
     function GetAllCustomers: TFDQuery;
+    procedure DeleteCustomer(AID: Integer);
   end;
 
 implementation
@@ -93,6 +94,21 @@ begin
   Result.Connection := FConnection;
   Result.SQL.Text := 'SELECT * FROM customers ORDER BY created_at DESC';
   Result.Open;
+end;
+
+procedure TCustomerService.DeleteCustomer(AID: Integer);
+var
+  Query: TFDQuery;
+begin
+  Query := TFDQuery.Create(nil);
+  try
+    Query.Connection := FConnection;
+    Query.SQL.Text := 'DELETE FROM customers WHERE id = :id';
+    Query.ParamByName('id').AsInteger := AID;
+    Query.ExecSQL;
+  finally
+    Query.Free;
+  end;
 end;
 
 end.

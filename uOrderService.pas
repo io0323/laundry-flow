@@ -84,58 +84,60 @@ var
   Item: TOrderItemRecord;
 begin
   ATotalAmount := 0;
-  // トランザクション処理を推奨
-  FConnection.StartTransaction;
   
   OrderQuery := TFDQuery.Create(nil);
-  ItemQuery := TFDQuery.Create(nil);
   try
-    OrderQuery.Connection := FConnection;
-    ItemQuery.Connection := FConnection;
-    
-    // 合計金額の計算
-    for Item in AItems do
-    begin
-      ATotalAmount := ATotalAmount + Item.Subtotal;
+    ItemQuery := TFDQuery.Create(nil);
+    try
+      OrderQuery.Connection := FConnection;
+      ItemQuery.Connection := FConnection;
+      
+      FConnection.StartTransaction;
+      try
+        // 合計金額の計算
+        for Item in AItems do
+        begin
+          ATotalAmount := ATotalAmount + Item.Subtotal;
+        end;
+        
+        // 注文ヘッダの作成
+        OrderQuery.SQL.Text := 'INSERT INTO orders (customer_id, pickup_date, status, total_price) ' +
+                               'VALUES (:cid, :pdate, :status, :total) RETURNING id';
+        OrderQuery.ParamByName('cid').AsInteger := ACustomerID;
+        OrderQuery.ParamByName('pdate').AsDateTime := APickupDate;
+        OrderQuery.ParamByName('status').AsString := '受付';
+        OrderQuery.ParamByName('total').AsInteger := ATotalAmount;
+        OrderQuery.Open; // RETURNING句の場合はOpenで取得
+        
+        OrderID := OrderQuery.FieldByName('id').AsInteger;
+        
+        // 注文明細の作成
+        ItemQuery.SQL.Text := 'INSERT INTO order_items (order_id, item_type, quantity, unit_price, stain_removal, urgent, subtotal) ' +
+                              'VALUES (:oid, :itype, :qty, :uprice, :stain, :urgent, :subtotal)';
+                              
+        for Item in AItems do
+        begin
+          ItemQuery.ParamByName('oid').AsInteger := OrderID;
+          ItemQuery.ParamByName('itype').AsString := Item.ItemType;
+          ItemQuery.ParamByName('qty').AsInteger := Item.Quantity;
+          ItemQuery.ParamByName('uprice').AsInteger := Item.UnitPrice;
+          ItemQuery.ParamByName('stain').AsInteger := Ord(Item.StainRemoval); // Boolean to Int
+          ItemQuery.ParamByName('urgent').AsInteger := Ord(Item.Urgent);
+          ItemQuery.ParamByName('subtotal').AsInteger := Item.Subtotal;
+          ItemQuery.ExecSQL;
+        end;
+        
+        FConnection.Commit;
+      except
+        FConnection.Rollback;
+        raise;
+      end;
+    finally
+      ItemQuery.Free;
     end;
-    
-    // 注文ヘッダの作成
-    OrderQuery.SQL.Text := 'INSERT INTO orders (customer_id, pickup_date, status, total_price) ' +
-                           'VALUES (:cid, :pdate, :status, :total) RETURNING id';
-    OrderQuery.ParamByName('cid').AsInteger := ACustomerID;
-    OrderQuery.ParamByName('pdate').AsDateTime := APickupDate;
-    OrderQuery.ParamByName('status').AsString := '受付';
-    OrderQuery.ParamByName('total').AsInteger := ATotalAmount;
-    OrderQuery.Open; // RETURNING句の場合はOpenで取得
-    
-    OrderID := OrderQuery.FieldByName('id').AsInteger;
-    
-    // 注文明細の作成
-    ItemQuery.SQL.Text := 'INSERT INTO order_items (order_id, item_type, quantity, unit_price, stain_removal, urgent, subtotal) ' +
-                          'VALUES (:oid, :itype, :qty, :uprice, :stain, :urgent, :subtotal)';
-                          
-    for Item in AItems do
-    begin
-      ItemQuery.ParamByName('oid').AsInteger := OrderID;
-      ItemQuery.ParamByName('itype').AsString := Item.ItemType;
-      ItemQuery.ParamByName('qty').AsInteger := Item.Quantity;
-      ItemQuery.ParamByName('uprice').AsInteger := Item.UnitPrice;
-      ItemQuery.ParamByName('stain').AsInteger := Ord(Item.StainRemoval); // Boolean to Int
-      ItemQuery.ParamByName('urgent').AsInteger := Ord(Item.Urgent);
-      ItemQuery.ParamByName('subtotal').AsInteger := Item.Subtotal;
-      ItemQuery.ExecSQL;
-    end;
-    
-    FConnection.Commit;
-  except
-    FConnection.Rollback;
+  finally
     OrderQuery.Free;
-    ItemQuery.Free;
-    raise;
   end;
-  
-  OrderQuery.Free;
-  ItemQuery.Free;
 end;
 
 function TOrderService.GetOrders(ACustomerID: Integer = -1): TFDQuery;

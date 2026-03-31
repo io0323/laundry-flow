@@ -97,6 +97,11 @@ begin
   Result.SQL.Text := 'SELECT item_type, SUM(quantity) as total_qty ' +
                      'FROM order_items GROUP BY item_type ORDER BY total_qty DESC';
   Result.Open;
+  
+  if Result.FindField('item_type') <> nil then
+    Result.FieldByName('item_type').DisplayLabel := 'アイテム';
+  if Result.FindField('total_qty') <> nil then
+    Result.FieldByName('total_qty').DisplayLabel := '注文点数';
 end;
 
 end.

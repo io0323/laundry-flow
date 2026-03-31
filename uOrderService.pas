@@ -159,6 +159,22 @@ begin
                        'ORDER BY o.order_date DESC';
   end;
   Result.Open;
+  
+  // 表示用ラベルと非表示設定
+  if Result.FindField('id') <> nil then
+    Result.FieldByName('id').DisplayLabel := '注文ID';
+  if Result.FindField('customer_id') <> nil then
+    Result.FieldByName('customer_id').Visible := False;
+  if Result.FindField('customer_name') <> nil then
+    Result.FieldByName('customer_name').DisplayLabel := '顧客名';
+  if Result.FindField('order_date') <> nil then
+    Result.FieldByName('order_date').DisplayLabel := '注文日時';
+  if Result.FindField('pickup_date') <> nil then
+    Result.FieldByName('pickup_date').DisplayLabel := '受取予定日';
+  if Result.FindField('status') <> nil then
+    Result.FieldByName('status').DisplayLabel := 'ステータス';
+  if Result.FindField('total_price') <> nil then
+    Result.FieldByName('total_price').DisplayLabel := '合計金額 (円)';
 end;
 
 procedure TOrderService.UpdateOrderStatus(AOrderID: Integer; const ANewStatus: string);

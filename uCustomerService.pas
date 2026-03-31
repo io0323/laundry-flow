@@ -86,6 +86,12 @@ begin
   Result.SQL.Text := 'SELECT * FROM customers WHERE name LIKE :keyword OR phone LIKE :keyword ORDER BY created_at DESC';
   Result.ParamByName('keyword').AsString := '%' + AKeyword + '%';
   Result.Open;
+  Result.FieldByName('id').Visible := False;
+  Result.FieldByName('name').DisplayLabel := '氏名';
+  Result.FieldByName('phone').DisplayLabel := '電話番号';
+  Result.FieldByName('address').DisplayLabel := '住所';
+  Result.FieldByName('member_type').DisplayLabel := '会員種別';
+  Result.FieldByName('created_at').DisplayLabel := '登録日時';
 end;
 
 function TCustomerService.GetAllCustomers: TFDQuery;
@@ -94,6 +100,12 @@ begin
   Result.Connection := FConnection;
   Result.SQL.Text := 'SELECT * FROM customers ORDER BY created_at DESC';
   Result.Open;
+  Result.FieldByName('id').Visible := False;
+  Result.FieldByName('name').DisplayLabel := '氏名';
+  Result.FieldByName('phone').DisplayLabel := '電話番号';
+  Result.FieldByName('address').DisplayLabel := '住所';
+  Result.FieldByName('member_type').DisplayLabel := '会員種別';
+  Result.FieldByName('created_at').DisplayLabel := '登録日時';
 end;
 
 procedure TCustomerService.DeleteCustomer(AID: Integer);
